@@ -1,26 +1,22 @@
 use crate::utils::handler::unmap;
 
-use super::handler::{get_param, gmap, map, msg};
+use super::handler::{get_param, gmap, map, gmsg, msg};
 
 extern crate serde_json;
 
-// 解析_type_调用对应的方法
 pub fn parser_packet(data: &str) {
-    println!("{}",data);
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     let action = match packet.get("_ACTION_") {
-        None => "None".to_string(),
-        Some(v) => v.to_string(),
+        None => "None",
+        Some(v) => v.as_str().unwrap(),
     };
     let params = get_param(packet.clone());
-    match &action[..] {
+    match action {
         "MAP" => map(packet.clone(), params.clone()),
         "UNMAP" => unmap(packet.clone(), params.clone()),
         "GMAP" => gmap(packet.clone(), params.clone()),
-        "\"MSG\"" => {
-            println!("xxx");
-            msg(packet.clone(), params.clone());
-        }
+        "MSG" => msg(packet.clone(), params.clone()),
+        "GMSG" => gmsg(packet.clone(), params.clone()),
         _ => assert_ne!(action, "None", "Fail to parser action"),
     }
 }
@@ -36,9 +32,7 @@ pub fn parser_args(data: String) -> String {
     let mut tmpl = &json;
     for arg in args {
         match tmpl.get(arg) {
-            None => {
-                break;
-            }
+            None => break,
             Some(v) => tmpl = v,
         }
     }
@@ -56,6 +50,6 @@ fn test_parser_args() {
 
 #[test]
 fn test_parser_packet() {
-    let str = r#"{"_ACTION_":"MSG","_PARAM_":"global ","_DATA_":"hello worldsss"}"#;
+    let str = r#"{"_ACTION_":"MSG","_DATA_":"{\"xxx\":\"xx\",\"yyy\":\"yy\"}","_PARAM_":"global"}"#;
     parser_packet(str);
 }
